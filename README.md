@@ -20,4 +20,5 @@ For instance,
 $ sudo python DellG5SEFan.py 50 65 10
 ```
 will disable fans for temperature below 50°C, put fans at 50% between 50°C and 65°C and at 100% over 65°C, with a 10 second loop.
+
 :warning: Be careful ! Too high termals can permanently damage your hardware.
