@@ -10,7 +10,6 @@ If you want this setting to stay upon reboot, you can create a `/etc/modprobe.d/
 ```shell
 # This file must be at /etc/modprobe.d/
 options dell-smm-hwmon restricted=0 ignore_dmi=1
-options i8k force=1
 ```
 ## Usage
 ```shell
