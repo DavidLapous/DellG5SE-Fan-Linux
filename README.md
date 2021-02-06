@@ -1,5 +1,5 @@
 # DellG5SE-Fan-Linux
-The Dell G5SE-5505 laptop isn't working with usual fan managers, this script is a small utility to automatically set fan speed according to thermals.
+The Dell G5SE-5505 laptop isn't working with usual fan managers, this script is a small utility to automatically set fan speed according to cpu and gpu thermals.
 ## Requirements
 This is a python script, you'll need python, and the `sys`, `os`, `time` python libraries.
 You will also need to modprobe the dell smm kernel module, which is not loaded by default on this laptop.
