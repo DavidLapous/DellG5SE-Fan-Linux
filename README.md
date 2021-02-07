@@ -28,7 +28,7 @@ will disable fans for temperature below 50°C, put fans at 50% between 50°C and
   - [x] Service on boot via systemd
   - [ ] Live update on temp changes in config file
 - [ ] Core 
-  - [ ] Different temp threshold for enabling disabling to avoid repeated fan switches.
+  - [ ] Different temp threshold for enabling disabling to avoid repeated fan switches, or put a sleep timer after a fan change.
   - [ ] change argument parsing
     - [ ] non verbose mode
     - [ ] default setup
