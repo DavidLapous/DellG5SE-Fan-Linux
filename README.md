@@ -6,7 +6,11 @@ You will also need to modprobe the dell smm kernel module, which is not loaded b
 ```shell
 $ sudo modprobe dell-smm-hwmon restricted=0 ignore_dmi=1
 ```
-If you want this setting to stay upon reboot, you can create a `/etc/modprobe.d/dell-smm-hwmon.conf` file containing
+If you want this setting to stay upon reboot, you can create a / replace by or append to the config file  `/etc/modules-load.d/dell-smm-hwmon.conf` 
+```shell
+dell-smm-hwmon
+```
+and the same for `/etc/modprobe.d/dell-smm-hwmon.conf` 
 ```shell
 # This file must be at /etc/modprobe.d/
 options dell-smm-hwmon restricted=0 ignore_dmi=1
