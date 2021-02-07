@@ -33,4 +33,5 @@ will disable fans for temperature below 50°C, put fans at 50% between 50°C and
     - [ ] non verbose mode
     - [ ] default setup
     - [ ] help menu
+- [ ] Depending on if the script takes too much hardware ressources, switch to another language.
 - [ ] Tell me 
