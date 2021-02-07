@@ -22,3 +22,15 @@ $ sudo python DellG5SEFan.py 50 65 10
 will disable fans for temperature below 50°C, put fans at 50% between 50°C and 65°C and at 100% over 65°C, with a 10 second loop.
 
 :warning: Be careful ! Too high temperatures can permanently damage your hardware.
+
+## Todo
+- [ ] Make a config file
+  - [x] Service on boot via systemd
+  - [ ] Live update on temp changes in config file
+- [ ] Core 
+  - [ ] Different temp threshold for enabling disabling to avoid repeated fan switches.
+  - [ ] change argument parsing
+    - [ ] non verbose mode
+    - [ ] default setup
+    - [ ] help menu
+- [ ] Tell me 
