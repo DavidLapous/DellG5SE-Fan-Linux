@@ -15,7 +15,7 @@ hwmon= '/sys/class/hwmon/'
 
 
 # Read arguments. Everything is optional, if not mentionned, value gets retrieved in config file.
-parser = argparse.ArgumentParser(description="Controls and monitor Dell G5 SE laptop.")
+parser = argparse.ArgumentParser(description="Controls and monitor Dell G5 SE laptop fans.")
 parser.add_argument("--profile", type=str, help="Temperature (in °C) at which fans starts spinning.", default="Default")
 parser.add_argument("-temp", type=float, nargs=2, metavar=("low","high"),  help="Temperature (in °C) at which fans starts spinning and at which fans are set to full speed.")
 parser.add_argument("-timer", type=float, help="Time for each temperature check and fan update (in seconds).")
