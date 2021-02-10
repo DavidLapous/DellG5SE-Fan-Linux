@@ -7,7 +7,6 @@ import argparse
 import configparser
 
 # Get home path, config path. hwmon path
-from pathlib import Path
 user=os.getlogin() # There may exists some cases where it's not working ?  
 home = str(os.path.expanduser('~'+user))
 configPath=home+"/.DellG5SE-fans.conf"
