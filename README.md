@@ -53,6 +53,7 @@ will start the script with the `Default` profile (or create it, if it doesn't ex
   - [ ] Live update on temp changes in config file
 - [ ] Core 
   - [ ] Different temp threshold for enabling disabling to avoid repeated fan switches, or put a sleep timer after a fan change.
+  - [x] Fan profiles
   - [x] change argument parsing
     - [x] non verbose mode
     - [x] default setup
