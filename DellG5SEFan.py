@@ -112,8 +112,8 @@ while True:
     gfan = int(open(dell_smm+"/fan3_input").read())
 
     # print update
-    print("current fan speeds :", cfan,"RPM and",gfan, "RPM")
-    print("cpu and gpu temps :", ctemp ,"°C and ",gtemp,"°C")
+    print("current fan speeds :", cfan,"RPM and",gfan, "RPM          ") # last spaces are meant to prevent "visual glitches" of fan speeds change from nonzero RPM to zero RPM
+    print("cpu and gpu temps :", ctemp ,"°C and ",gtemp,"°C          ")
     sys.stdout.write("\033[2F") # move the cursor 2 lines above.
 
     # Handles cpu fan
