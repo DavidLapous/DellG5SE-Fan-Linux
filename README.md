@@ -46,6 +46,7 @@ and
 $ sudo python DellG5SEFan.py
 ```
 will start the script with the `Default` profile (or create it, if it doesn't exist).
+
 :warning: Be careful ! Too high temperatures can permanently damage your hardware.
 
 ## Todo
