@@ -52,13 +52,8 @@ will start the script with the `Default` profile (or create it, if it doesn't ex
 ## Todo
 - [x] Make a config file
   - [ ] Live update on temp changes in config file
-- [ ] Core 
-  - [ ] Different temp threshold for enabling disabling to avoid repeated fan switches, or put a sleep timer after a fan change.
-  - [x] Fan profiles
-  - [x] change argument parsing
-    - [x] non verbose mode
-    - [x] default setup
-    - [x] help menu
-- [ ] Depending on if the script takes too much hardware resources, switch to another language.
-- [ ] Once the config file is done and the script can live-update the parameters, add a gnome extension to update config file.
+- [ ] Gnome extension / PySimpleGUI with system tray 
+  - [ ] Temperature monitoring, temp graphs.
+  - [ ] Update profile / Fan speed.
+  - [ ] Keyboard shortcut, complicated with wayland I don't really know how to deal with it.
 - [ ] Tell me 
