@@ -17,10 +17,10 @@ hwmon= '/sys/class/hwmon/'
 parser = argparse.ArgumentParser(description="Controls and monitor Dell G5 SE laptop fans.")
 parser.add_argument("--profile", "-p", type=str, help="Use a saved profile.", default="Default")
 parser.add_argument("-temp", type=float, nargs=2, metavar=("low","high"),  help="Temperature (in °C) at which fans starts spinning and at which fans are set to full speed.")
-parser.add_argument("-timer", type=float, help="Time for each temperature check and fan update (in seconds).")
+parser.add_argument("-timer", type=float, help="Sleep time between each temperature check and fan update (in seconds).")
 parser.add_argument("-s","--silent", help="Silent output.", action="store_true")
 parser.add_argument("--save", help="Save profile to config file.", action="store_true")
-parser.add_argument("-set", type=int, nargs=2, metavar=("low","high"), help="Set fans speed to selected value (int from 0 to 255).")
+parser.add_argument("-set", type=int, nargs=2, metavar=("cpu_fan","gpu_fan"), help="Set fans speed to selected value (integer from 0 to 255).")
 
 args = parser.parse_args()
 
