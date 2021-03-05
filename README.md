@@ -1,7 +1,7 @@
 # DellG5SE-Fan-Linux
 The Dell G5SE-5505 laptop isn't working with usual fan managers, this script is a small utility to automatically set fan speed according to cpu and gpu thermals.
 ## Requirements
-This is a python script, you'll need python, and the `sys`, `os`, `time` python libraries.
+Python (tested on latest version 3.9). Make sure either k10temp or zenpower (zenmonitor) kernel modules are loaded (by default k10temp is loaded). 
 You will also need to modprobe the dell smm kernel module, which is not loaded by default on this laptop.
 ```shell
 $ sudo modprobe dell-smm-hwmon restricted=0 ignore_dmi=1
@@ -17,21 +17,25 @@ options dell-smm-hwmon restricted=0 ignore_dmi=1
 ```
 ## Usage
 ```shell
-$ python DellG5SEFan.py -h
+$ python DellG5SEFan.py -h 
 usage: DellG5SEFan.py [-h] [--profile PROFILE] [-temp low high] [-timer TIMER]
-                      [-s] [--save]
+                      [-s] [--save] [-set cpu_fan gpu_fan]
 
 Controls and monitor Dell G5 SE laptop fans.
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --profile PROFILE  Use a saved profile.
-  -temp low high     Temperature (in °C) at which fans starts spinning and at
-                     which fans are set to full speed.
-  -timer TIMER       Time for each temperature check and fan update (in
-                     seconds).
-  -s, --silent       Silent output.
-  --save             Save profile to config file.
+  -h, --help            show this help message and exit
+  --profile PROFILE, -p PROFILE
+                        Use a saved profile.
+  -temp low high        Temperature (in °C) at which fans starts spinning and
+                        at which fans are set to full speed.
+  -timer TIMER          Sleep time between each temperature check and fan
+                        update (in seconds).
+  -s, --silent          Silent output.
+  --save                Save profile to config file.
+  -set cpu_fan gpu_fan  Set fans speed to selected value (integer from 0 to
+                        255).
+
 
 ```
 For instance, 
