@@ -15,13 +15,17 @@ hwmon= '/sys/class/hwmon/'
 
 # Read arguments. Everything is optional, if not mentionned, value gets retrieved in config file.
 parser = argparse.ArgumentParser(description="Controls and monitor Dell G5 SE laptop fans.")
-parser.add_argument("--profile", type=str, help="Use a saved profile.", default="Default")
+parser.add_argument("--profile", "-p", type=str, help="Use a saved profile.", default="Default")
 parser.add_argument("-temp", type=float, nargs=2, metavar=("low","high"),  help="Temperature (in °C) at which fans starts spinning and at which fans are set to full speed.")
 parser.add_argument("-timer", type=float, help="Time for each temperature check and fan update (in seconds).")
 parser.add_argument("-s","--silent", help="Silent output.", action="store_true")
 parser.add_argument("--save", help="Save profile to config file.", action="store_true")
+parser.add_argument("-set", type=int, nargs=2, metavar=("low","high"), help="Set fans speed to selected value (int from 0 to 255).")
 
 args = parser.parse_args()
+
+
+
 
 # Disables prints if silent is true
 if args.silent:
@@ -69,26 +73,38 @@ if args.timer == None:
 else:
     timer = args.timer
 
+# Save profile if asked
 if args.save:
     config[profile]={"lowtemp" : lowtemp, "hightemp" : hightemp, "timer" : timer}
     config.write(open(configPath,"w"))
 
 
-# Print values (for debug mostly)
-print("Starting script...")
-print("temperatures :", lowtemp,"°C and",hightemp,"°C")
-print("Loop timer :", timer)
-print("Profile used : "+profile)
+# retrieve set arguments if they exist.
+set = False
+if args.set != None:
+    set = True
+    setCPUFan, setGPUFan = args.set
+    setCPUFan = min(max(setCPUFan,0),255)
+    setGPUFan = min(max(setGPUFan,0),255)
+    
+
+######################################################################################
+
+
 
 # Get dell smm and k10temp directories in hwmon
+cname=""
 for _,dirs,_  in os.walk(hwmon):
     for dir in dirs:
         if open(hwmon + dir + '/name').read() == "dell_smm\n":
             dell_smm = hwmon + dir
         if open(hwmon + dir + '/name').read() == "k10temp\n":
             cput = hwmon + dir
+            cname="k10temp"
+        if open(hwmon + dir + '/name').read() == "zenpower\n":
+            cput = hwmon + dir
+            cname="zenpower"
 
-print("Hwmon devices : dell smm is "+dell_smm[-1], " and k10temp is "+cput[-1])
 
 # Fan write permission check.
 try:
@@ -97,27 +113,42 @@ except IOError as e:
     print(e)
     sys.exit("Cannot change fan speed. Are you running the script with root permission ?")
 
-print("------------------------------------------")
+# If set is true, put fans to selected values cfan & gfan.
+if set:
+    open(dell_smm+"/pwm1",'w').write(str(setCPUFan))
+    open(dell_smm+"/pwm3",'w').write(str(setGPUFan))
+    print("Set fans to",setCPUFan,"and",setGPUFan)
+    sys.exit()
+
+
+# Print values (for debug mostly)
+
+print("Temperatures thresholds :", lowtemp,"°C and",hightemp,"°C")
+print("Loop timer :", timer)
+print("Profile used :",profile)
+print("Hwmon devices : dell smm is",dell_smm[-1], "and",cname, "is",cput[-1])
+
+print("------------------------------------------------")
 # Fan loop
 while True:
-    # need to be placed here or it does not work -- need investigation
-    cpu_temp = open(cput+"/temp2_input",'r')
-    gpu_temp = open(dell_smm+"/temp4_input",'r')
+    # # need to be placed here or it does not work -- need investigation
+    # cpu_temp = open(cput+"/temp2_input",'r')
+    # gpu_temp = open(dell_smm+"/temp4_input",'r')
 
-    ctemp = float(cpu_temp.read())/1000
-    gtemp = float(gpu_temp.read())/1000
+    ctemp = float(open(cput+"/temp2_input",'r').read())/1000
+    gtemp = float(open(dell_smm+"/temp4_input",'r').read())/1000
 
     cfan = int(open(dell_smm+"/fan1_input").read())
     gfan = int(open(dell_smm+"/fan3_input").read())
 
     # print update
-    print("current fan speeds :", cfan,"RPM and",gfan, "RPM          ") # last spaces are meant to prevent "visual glitches" of fan speeds change from nonzero RPM to zero RPM
-    print("cpu and gpu temps :", ctemp ,"°C and ",gtemp,"°C          ")
+    print("current fan speeds :", round(cfan,1),"RPM and",round(gfan,1), "RPM             ")
+    print("cpu and gpu temps :", round(ctemp,1) ,"°C and ",round(gtemp,1),"°C             ")
     sys.stdout.write("\033[2F") # move the cursor 2 lines above.
 
     # Handles cpu fan
     if ctemp < lowtemp :
-        if cfan > 0:
+        if cfan > 2500:
             open(dell_smm+"/pwm1",'w').write("0")
 
     elif ctemp < hightemp:
@@ -130,7 +161,7 @@ while True:
 
     # Handles gpu fan
     if gtemp < lowtemp :
-        if gfan > 0:
+        if gfan > 2500:
             open(dell_smm+"/pwm3",'w').write("0")
 
     elif gtemp < hightemp:
