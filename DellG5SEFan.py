@@ -94,17 +94,20 @@ if args.set != None:
 
 # Get dell smm and k10temp directories in hwmon
 cname=""
+cput=""
 for _,dirs,_  in os.walk(hwmon):
     for dir in dirs:
         if open(hwmon + dir + '/name').read() == "dell_smm\n":
             dell_smm = hwmon + dir
         if open(hwmon + dir + '/name').read() == "k10temp\n":
-            cput = hwmon + dir
+            cput = hwmon + dir + "/temp2_input"
             cname="k10temp"
         if open(hwmon + dir + '/name').read() == "zenpower\n":
-            cput = hwmon + dir
+            cput = hwmon + dir + "/temp1_input"
             cname="zenpower"
-
+# Case of when zenmonitor and k10temp are not available, fallback on dellsmm cpu temp.
+if cput=="":
+    cput = dell_smm + "/temp2_input"
 
 # Fan write permission check.
 try:
@@ -126,7 +129,10 @@ if set:
 print("Temperatures thresholds :", lowtemp,"°C and",hightemp,"°C")
 print("Loop timer :", timer)
 print("Profile used :",profile)
-print("Hwmon devices : dell smm is",dell_smm[-1], "and",cname, "is",cput[-1])
+if cname!="":
+    print("Hwmon devices : dell smm is",dell_smm[-1], "and",cname, "is",cput[-13])
+else:
+    print("Hwmon devices : dell smm is",dell_smm[-1])
 
 print("------------------------------------------------")
 # Fan loop
@@ -135,7 +141,7 @@ while True:
     # cpu_temp = open(cput+"/temp2_input",'r')
     # gpu_temp = open(dell_smm+"/temp4_input",'r')
 
-    ctemp = float(open(cput+"/temp2_input",'r').read())/1000
+    ctemp = float(open(cput,'r').read())/1000
     gtemp = float(open(dell_smm+"/temp4_input",'r').read())/1000
 
     cfan = int(open(dell_smm+"/fan1_input").read())
