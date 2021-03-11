@@ -47,12 +47,12 @@ will disable fans for temperature below 50°C, put fans at 50% between 50°C and
 ```shell
 $ sudo python DellG5SEFan.py -temp 0 65 -timer 10 -p m --save
 ```
-will set fan to 50% and to 100% if cpu or gpu temperature is greater than 65°C, and save it to the (new) profile m,
+will set fans to 50% and to 100% if cpu or gpu temperature is greater than 65°C, and save it to the (new) profile m,
 
 ```shell
 $ sudo python DellG5SEFan.py -temp 0 0 -timer 10 -p f --save
 ```
-will set fan to maximum speed, and save it to the (new) profile f,
+will set fans to maximum speed, and save it to the (new) profile f,
 ```shell
 $ sudo python DellG5SEFan.py
 ```
