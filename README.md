@@ -16,6 +16,8 @@ and the same for `/etc/modprobe.d/dell-smm-hwmon.conf`
 options dell-smm-hwmon restricted=0 ignore_dmi=1
 ```
 ## Usage
+
+### Python version
 ```shell
 $ python DellG5SEFan.py -h 
 usage: DellG5SEFan.py [-h] [--profile PROFILE] [-temp low high] [-timer TIMER]
@@ -64,6 +66,19 @@ will start the script with the `m` profile (if it exists).
 
 :warning: Be careful ! Too high temperatures can permanently damage your hardware.
 
+### Cpp Version
+As the early version of the python script, 
+```shell
+$ sudo DellFan lowtemp hightemp timer
+```
+For a better ease of use, you can put this script in your binaries path `/usr/bin/DellFan` and ask `sudo` not to ask your password everytime you use it by adding the line
+```
+ALL ALL=(root) NOPASSWD: /usr/bin/DellFan
+```
+to your `sudoers` file.
+
+:warning: Be careful ! Too high temperatures can permanently damage your hardware.
+
 ## Todo
 - [x] Make a config file
   - [ ] Live update on temp changes in config file
@@ -71,4 +86,6 @@ will start the script with the `m` profile (if it exists).
   - [ ] Temperature monitoring, temp graphs.
   - [ ] Update profile / Fan speed.
   - [ ] Keyboard shortcut, complicated with wayland I don't really know how to deal with it.
+- [x] Cpp version
+  - [ ] gui  
 - [ ] Tell me 
