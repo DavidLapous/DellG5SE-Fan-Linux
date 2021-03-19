@@ -83,6 +83,8 @@ ALL ALL=(root) NOPASSWD: /usr/bin/DellFan
 ```
 to your `sudoers` file.
 
+This also should allow you to map profiles / fan speeds to keyboard shortcuts via your display environment (gnome / kde / ...).
+
 :warning: Be careful ! Too high temperatures can permanently damage your hardware.
 
 ## Todo
