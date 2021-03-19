@@ -71,6 +71,12 @@ As the early version of the python script,
 ```shell
 $ sudo DellFan lowtemp hightemp timer
 ```
+If you only want to set fan speeds once, the usage is
+```shell
+$ sudo DellFan cpu_fan_speed gpu_fan_speed -1
+```
+The fan speeds should belong to the interval [0;256].
+
 For a better ease of use, you can put this script in your binaries path `/usr/bin/DellFan` and ask `sudo` not to ask your password everytime you use it by adding the line
 ```
 ALL ALL=(root) NOPASSWD: /usr/bin/DellFan
