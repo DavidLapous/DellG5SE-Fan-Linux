@@ -75,8 +75,7 @@ void update_vars()
     a.close();
 };
 
-// Set fans to selected speed.
-
+// Set cpu fans to selected speed. Input should be in the set {0,128,256}.
 void set_cpu_fan(int left)
 {
     // Force left to be in [0,256]
@@ -87,6 +86,7 @@ void set_cpu_fan(int left)
     pwm << l;
     pwm.close();
 };
+// Set gpu fans to selected speed. Input should be in the set {0,128,256}.
 void set_gpu_fan(int right)
 {
     // Force right to be in [0,256]
@@ -168,8 +168,8 @@ void update_fans(int lowtemp, int hightemp)
 
 void print_status()
 {
-    std::cout << "Current fan speeds : " << cpu_fan << " RPM and " << gpu_fan << " RPM.                 " << std::endl;
-    std::cout << "CPU and GPU temperatures : " << cpu_temp/1000 << "°C and " << gpu_temp/1000 << "°C.                 " << std::endl;
+    std::cout << "Current fan speeds : " << cpu_fan << " RPM and " << gpu_fan << " RPM.      " << std::endl;
+    std::cout << "CPU and GPU temperatures : " << cpu_temp/1000 << "°C and " << gpu_temp/1000 << "°C.  " << std::endl;
     std::cout << "\033[2F";
 };
 
@@ -178,13 +178,15 @@ int main(int argc, char* argv[])
 
     if (argc <= 2)
     {
-        printf("Need more arguments.");
+        printf("Need more arguments.\n");
+        printf("Usage : DellFan lowtemp hightemp timer\n");
+        printf("or, if you only want to set speed once : DellFan leftspeed rightspeed -1\n");
         exit(EXIT_FAILURE);
     }
 
     const int lowtemp = std::stoi(argv[1]) * 1000;
     const int hightemp = std::stoi(argv[2]) * 1000;
-    int timer =5;
+    int timer =10;
     if (argc >3){
         timer = std::stoi(argv[3]);
     }
@@ -195,6 +197,16 @@ int main(int argc, char* argv[])
     // Check if launched with enough permissions.
     check_fan_write_permission();
     
+    if(timer <=0 ){
+        // In that case, we assume the user only wants to set fans once, and exit.
+        const int left = std::min(std::max(lowtemp/1000,0),255); 
+        const int right = std::min(std::max(hightemp/1000,0),255);
+        set_cpu_fan(left);
+        set_gpu_fan(right);
+        std::cout << "Set fans to " << left << " and " << right << "."<< std::endl;
+        return EXIT_SUCCESS;
+    }
+
     // Fan update loop
     while (true)
     {
@@ -207,7 +219,7 @@ int main(int argc, char* argv[])
         // wait $timer seconds
         sleep(timer);
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 // void on_window_main_destroy()
