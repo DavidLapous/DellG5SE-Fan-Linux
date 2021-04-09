@@ -1,0 +1,22 @@
+# Fans
+0x94 -- CPU Fan speed target --> not writable ...  need to find a manual fan mode switch
+0x95 -- Current CPU fan speed
+0x97 -- GPU Fan speed target --> editable. 
+0x98 -- Current GPU fan speed
+
+# Temps 
+0xA8 -- CPU temp (in °C)
+0xA9 -- GPU temp (in °C)
+0xAA -- temp sensor, need identification
+0xAB -- temp sensor, need identification
+0xAC --temp sensor, need identification
+
+# Others
+0x5D -- Keyboard Backlight 0: off, 1 : medium, 2: max. -- not editable.
+
+# Interesting addresses 
+0xA1 -- switches from 0x80 to 0x81 on cpu fan start 
+0x51 0x55 0x59 0x5b 0x70 0x77 0x7b 0x88 0x8a 0x8b --> changing between "on charge" and "on battery" 
+
+# Addresses changing during idle
+0x17 0x4c 0x55 0x74 0x75 0x8b 0xa8 0xa9 0xae 0xd3
