@@ -15,6 +15,7 @@ and the same for `/etc/modprobe.d/dell-smm-hwmon.conf`
 # This file must be at /etc/modprobe.d/
 options dell-smm-hwmon restricted=0 ignore_dmi=1
 ```
+For the CPP version, which is writing to directly to the embedded controller, you will need to allow EC write, by following [this steps](https://github.com/YoyPa/isw/wiki/How-to-configure-ec_sys-with-write_support=1).
 ## Usage
 
 ### Python version
@@ -94,6 +95,9 @@ This also should allow you to map profiles / fan speeds to keyboard shortcuts vi
   - [ ] Temperature monitoring, temp graphs.
   - [ ] Update profile / Fan speed.
   - [ ] Keyboard shortcut, complicated with wayland I don't really know how to deal with it.
-- [x] Cpp version
-  - [ ] gui  
+- [x] Cpp version 
+  - [ ] gui
+- [ ] Direct EC edditing.
+  - [x] GPU part.
+  - [ ] CPU part. Need to find a way to disable bios fan control. 
 - [ ] Tell me 
