@@ -194,7 +194,7 @@ void update_fans(int lowtemp, int hightemp)
     }
     else if (gpu_temp < hightemp)
     {
-        if (gpu_fan <= 2300)
+        if (gpu_fan <= 1900)
         {
             set_gpu_fan(128);
         }
