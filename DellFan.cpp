@@ -10,9 +10,25 @@
 // #include <stdexcept> //error handling
 // #include <gtk/gtk.h> // gtk interface
 
+
+#include <err.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 namespace fs = std::filesystem;
 
+#define ECio "/sys/kernel/debug/ec/ec0/io"
+#define GPUaddr 151 // 0x97
+#define CPUaddr 148 //0x94
+#define ZERO 255 // 0xFF
+#define SLOW 240 // 0xF0
+#define MEDIUM 200 // 204 -- 0xCC
+#define NORMAL 163 // 0xA3
+#define FAST 102 // 0x66 
+#define BOOST 91 // 0x5B
+
 const std::string hwmon = "/sys/class/hwmon";
+
 int cpu_temp;
 int gpu_temp;
 int cpu_fan;
@@ -79,7 +95,7 @@ void update_vars()
 void set_cpu_fan(int left)
 {
     // Force left to be in [0,256]
-    int l = std::max(0, std::min(256, left));
+    int l = std::max(0, std::min(255, left));
     // Writes to hwmon
     std::ofstream pwm;
     pwm.open(dellsmm + "/pwm1");
@@ -90,13 +106,28 @@ void set_cpu_fan(int left)
 void set_gpu_fan(int right)
 {
     // Force right to be in [0,256]
-    int r = std::max(0, std::min(256, right));
+    int r = std::max(0, std::min(255, right));
     // Writes to hwmon
     std::ofstream pwm;
     pwm.open(dellsmm + "/pwm3");
     pwm << r;
     pwm.close();
 };
+
+
+void write_to_ec(int byte_offset, uint8_t value){
+    int fd = open(ECio, O_WRONLY);
+    int error;
+
+	error = lseek(fd, byte_offset, SEEK_SET);
+	if (error != byte_offset)
+		err(EXIT_FAILURE, "Cannot set offset to 0x%.2x", byte_offset);
+
+	error = write(fd, &value, 1);
+	if (error != 1)
+		err(EXIT_FAILURE, "Cannot write value 0x%.2x to offset 0x%.2x",
+		    value, byte_offset);
+}
 
 void check_fan_write_permission()
 {
@@ -117,15 +148,21 @@ void update_fans(int lowtemp, int hightemp)
     // Handle the left (cpu) fan
     if (cpu_temp < lowtemp)
     {
-        if (cpu_fan > 2500)
+        if (cpu_fan > 2500 || cpu_fan <1500)
         {
-            set_cpu_fan(0);
+            // set_cpu_fan(0);
             // new_fan_values[0] = 0;
+            if (cpu_fan <1500){
+                write_to_ec(CPUaddr,SLOW);
+            }
+            else{
+                set_cpu_fan(0);
+            }
         }
     }
     else if (cpu_temp < hightemp)
     {
-        if (cpu_fan <= 2000 || cpu_fan >= 3500)
+        if (cpu_fan <= 1900 || cpu_fan >= 3500)
         {
             set_cpu_fan(128);
             // new_fan_values[0] = 128
@@ -142,18 +179,28 @@ void update_fans(int lowtemp, int hightemp)
     // Handles the right (GPU) fan
     if (gpu_temp < lowtemp)
     {
-        if (gpu_fan > 2500)
+        if (gpu_fan > 1900 || gpu_fan < 1500)
         {
-            set_gpu_fan(0);
+            // if (cpu_fan >0 || gpu_fan <1500){
+            //     write_to_ec(GPUaddr,SLOW);
+            // }
+            // else{
+            //     set_gpu_fan(0);
+            //     write_to_ec(GPUaddr,SLOW);
+            // }
+            write_to_ec(GPUaddr,SLOW);
             // new_fan_values[1] = 0;
         }
     }
     else if (gpu_temp < hightemp)
     {
-        if (gpu_fan <= 2000 || gpu_fan >= 3500)
+        if (gpu_fan <= 2300)
         {
             set_gpu_fan(128);
-            // new_fan_values[1] = 128;
+        }
+        else if (gpu_fan >= 2900)
+        {
+            write_to_ec(GPUaddr,MEDIUM);
         }
     }
     else
@@ -161,6 +208,7 @@ void update_fans(int lowtemp, int hightemp)
         if (gpu_fan < 3500)
         {
             set_gpu_fan(255);
+            // write_to_ec(GPUaddr,FAST);
             // new_fan_values[1] = 255;
         }
     }
