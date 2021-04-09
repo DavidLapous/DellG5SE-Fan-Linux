@@ -97,7 +97,7 @@ This also should allow you to map profiles / fan speeds to keyboard shortcuts vi
   - [ ] Keyboard shortcut, complicated with wayland I don't really know how to deal with it.
 - [x] Cpp version 
   - [ ] gui
-- [ ] Direct EC edditing.
+- [ ] Direct EC editing.
   - [x] GPU part.
   - [ ] CPU part. Need to find a way to disable bios fan control. 
 - [ ] Tell me 
