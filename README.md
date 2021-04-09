@@ -15,7 +15,7 @@ and the same for `/etc/modprobe.d/dell-smm-hwmon.conf`
 # This file must be at /etc/modprobe.d/
 options dell-smm-hwmon restricted=0 ignore_dmi=1
 ```
-For the CPP version, which is writing to directly to the embedded controller, you will need to allow EC write, by following [this steps](https://github.com/YoyPa/isw/wiki/How-to-configure-ec_sys-with-write_support=1).
+For the CPP version, which is writing to directly to the embedded controller, you will need to allow EC write, by following [these steps](https://github.com/YoyPa/isw/wiki/How-to-configure-ec_sys-with-write_support=1).
 ## Usage
 
 ### Python version
