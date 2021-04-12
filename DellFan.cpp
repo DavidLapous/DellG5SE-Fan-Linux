@@ -33,15 +33,17 @@ int cpu_temp;
 int gpu_temp;
 int cpu_fan;
 int gpu_fan;
-std::string dellsmm;
-std::string dGPU;
-std::string CPU; // either k10temp or zenpower
 
-//  Gets the Hwmon ids of dellsmm, k10temp/zenpower, and dGPU.
+std::string GPU_path;
+std::string CPU_path;
+std::string CPU_fan_path;
+std::string GPU_fan_path; 
+std::string dellsmm="";
+
+//  Gets the needed paths.
 void Hwmon_get()
 {
-    // std::string dellsmm_path = "";
-    // std::string cpu_path = "";
+    
     for (const auto &entry : fs::directory_iterator(hwmon))
     {
         std::ifstream namepath = std::ifstream(entry.path().string() + "/name");
@@ -49,27 +51,56 @@ void Hwmon_get()
                                        (std::istreambuf_iterator<char>()));
         if (name == "dell_smm\n")
         {
-            // dellsmm_path = entry.path().string().back();
             dellsmm = entry.path().string();
-        }
-        else if (name == "zenpower\n")
-        {
-            // cpu_path = entry.path().string().back();
-            CPU = entry.path().string();
-        }
-        else if (name == "k10temp\n")
-        {
-            // cpu_path = entry.path().string().back();
-            CPU = entry.path().string();
-        }
-        else if (name == "amdgpu\n")
-        {
-            // There are two amd gpus (iGPU and dGPU) an easy way to differentiate them is to check the presence of pwm1. Another way would be to check vbios version (may be more robust).
-            if (fs::exists(entry.path().string() + "/pwm1"))
-            {
-                dGPU = entry.path().string();
+            for (const auto & file : fs::directory_iterator(dellsmm)){
+
+                std::ifstream a;
+                std::string file_path = file.path().string();
+                a.open(file_path);
+                std::string sensor_name;
+                a >> sensor_name;
+
+                if (sensor_name == "GPU"){
+                    GPU_path = file_path;
+                    GPU_path.replace(GPU_path.length()-5,5,"input");
+                }
+                else if (sensor_name =="CPU")
+                {
+                    CPU_path = file_path;
+                    CPU_path.replace(CPU_path.length()-5,5,"input");
+                }
+                else if (sensor_name =="Processor")
+                {
+                    CPU_fan_path = file_path;
+                    CPU_fan_path.replace(CPU_fan_path.length()-5,5,"input");
+                }
+                else if (sensor_name =="Video")
+                {
+                    GPU_fan_path = file_path;
+                    GPU_fan_path.replace(GPU_fan_path.length()-5,5,"input");
+                }
             }
         }
+        // else if (name == "zenpower\n")
+        // {
+        //     CPU = entry.path().string();
+        // }
+        // else if (name == "k10temp\n")
+        // {
+        //     CPU = entry.path().string();
+        // }
+        // else if (name == "amdgpu\n")
+        // {
+        //     // There are two amd gpus (iGPU and dGPU) an easy way to differentiate them is to check the presence of pwm1. Another way would be to check vbios version (may be more robust).
+        //     if (fs::exists(entry.path().string() + "/pwm1"))
+        //     {
+        //         dGPU = entry.path().string();
+        //     }
+        // }
+    }
+    if (dellsmm == ""){
+        std::cout << "Cannot find Dell-smm-hwmon. Try 'modprobe dell-smm-hwmon restricted=0 ignore_dmi=1'. " << std::endl;
+        exit(EXIT_FAILURE);
     }
 };
 
@@ -77,16 +108,16 @@ void Hwmon_get()
 void update_vars()
 {
     std::ifstream a;
-    a.open(CPU + "/temp2_input"); //Tdie cpu temp
+    a.open(CPU_path); //CPU dellsmm
     a >> cpu_temp;
     a.close();
-    a.open(dGPU + "/temp2_input"); //Junction dGPU temp
+    a.open(GPU_path); //GPU dellsmm
     a >> gpu_temp;
     a.close();
-    a.open(dellsmm + "/fan1_input"); //Processor fan
+    a.open(CPU_fan_path); //Processor fan
     a >> cpu_fan;
     a.close();
-    a.open(dellsmm + "/fan3_input"); // Video fan
+    a.open(GPU_fan_path); // Video fan
     a >> gpu_fan;
     a.close();
 };
@@ -144,20 +175,13 @@ void check_fan_write_permission()
 // Updates fans accordings to temp.
 void update_fans(int lowtemp, int hightemp)
 {
-    // int fan_update[2] = {-1, -1}; //To debug
     // Handle the left (cpu) fan
     if (cpu_temp < lowtemp)
     {
         if (cpu_fan > 2500 || cpu_fan <1500)
         {
-            // set_cpu_fan(0);
-            // new_fan_values[0] = 0;
-            if (cpu_fan <1500){
-                write_to_ec(CPUaddr,SLOW);
-            }
-            else{
-                set_cpu_fan(0);
-            }
+            set_cpu_fan(0);
+            // write_to_ec(CPUaddr,SLOW); // Not working...
         }
     }
     else if (cpu_temp < hightemp)
@@ -165,7 +189,6 @@ void update_fans(int lowtemp, int hightemp)
         if (cpu_fan <= 1900 || cpu_fan >= 3500)
         {
             set_cpu_fan(128);
-            // new_fan_values[0] = 128
         }
     }
     else
@@ -173,7 +196,6 @@ void update_fans(int lowtemp, int hightemp)
         if (cpu_fan < 3500)
         {
             set_cpu_fan(255);
-            // new_fan_values[0] = 255;
         }
     }
     // Handles the right (GPU) fan
@@ -181,26 +203,19 @@ void update_fans(int lowtemp, int hightemp)
     {
         if (gpu_fan > 1900 || gpu_fan < 1500)
         {
-            // if (cpu_fan >0 || gpu_fan <1500){
-            //     write_to_ec(GPUaddr,SLOW);
-            // }
-            // else{
-            //     set_gpu_fan(0);
-            //     write_to_ec(GPUaddr,SLOW);
-            // }
             write_to_ec(GPUaddr,SLOW);
-            // new_fan_values[1] = 0;
         }
     }
     else if (gpu_temp < hightemp)
     {
-        if (gpu_fan <= 1900)
-        {
-            set_gpu_fan(128);
-        }
-        else if (gpu_fan >= 2900)
+        
+        if (gpu_fan >= 2900 || cpu_fan >1000)
         {
             write_to_ec(GPUaddr,MEDIUM);
+        }
+        else if (gpu_fan <= 2100)
+        {
+            set_gpu_fan(128);
         }
     }
     else
@@ -209,7 +224,6 @@ void update_fans(int lowtemp, int hightemp)
         {
             set_gpu_fan(255);
             // write_to_ec(GPUaddr,FAST);
-            // new_fan_values[1] = 255;
         }
     }
 };
@@ -228,6 +242,7 @@ int main(int argc, char* argv[])
     {
         printf("Need more arguments.\n");
         printf("Usage : DellFan lowtemp hightemp timer\n");
+        printf("where 'lowtemp' is your desired idle temperature, and 'hightemp' is the temperature at which fans are set to full speed.\n");
         printf("or, if you only want to set speed once : DellFan leftspeed rightspeed -1\n");
         exit(EXIT_FAILURE);
     }
@@ -254,7 +269,6 @@ int main(int argc, char* argv[])
         std::cout << "Set fans to " << left << " and " << right << "."<< std::endl;
         return EXIT_SUCCESS;
     }
-
     // Fan update loop
     while (true)
     {
