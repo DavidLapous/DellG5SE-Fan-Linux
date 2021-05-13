@@ -68,15 +68,22 @@ will start the script with the `m` profile (if it exists).
 :warning: Be careful ! Too high temperatures can permanently damage your hardware.
 
 ### Cpp Version
-As the early version of the python script, 
+Approximatively the same as the python script as usage. EC writing gives (much more) fan control.
 ```shell
-$ sudo DellFan lowtemp hightemp timer
+$ sudo DellFan -h
+Usage :
+sudo DellFan [-s left_fan_speed right_fan_speed] [-l t1 t2 t3 t4] [-t timer] [-r ] [-b]
+
+Arguments description :
+ -h, --help             show this help message and exit.
+ -s, --set left right   sets left/rights fan to selected speed (from 0 to 255).
+ -l, --loop t1 t2 t3 t4 given the temperature thresholds t1, t2, t3, t4 (in °C),
+                        adjusts the fan speed accordingly with a loop.
+ -t, --timer t          set the loop timer (in seconds). Default is 20s.
+ -r, --restore          Gives back the fan control to the BIOS.
+ -b, --boost            Set fan speed to BOOST (as fn+F7).
+
 ```
-If you only want to set fan speeds once, the usage is
-```shell
-$ sudo DellFan cpu_fan_speed gpu_fan_speed -1
-```
-The fan speeds should belong to the interval [0;256].
 
 For a better ease of use, you can put this script in your binaries path `/usr/bin/DellFan` and ask `sudo` not to ask your password everytime you use it by adding the line
 ```
@@ -97,7 +104,9 @@ This also should allow you to map profiles / fan speeds to keyboard shortcuts vi
   - [ ] Keyboard shortcut, complicated with wayland I don't really know how to deal with it.
 - [x] Cpp version 
   - [ ] gui
-- [ ] Direct EC editing.
+  - [ ] Fan curve fixes
+- [x] Direct EC editing.
   - [x] GPU part.
-  - [ ] CPU part. Need to find a way to disable bios fan control. 
+  - [x] CPU part.
+  - [x] Manual trigger. 
 - [ ] Tell me 
