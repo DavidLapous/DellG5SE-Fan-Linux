@@ -1,8 +1,12 @@
 # Fans
-0x94 -- CPU Fan speed target --> not writable ...  need to find a manual fan mode switch
+0x94 -- CPU Fan speed target 
 0x95 -- Current CPU fan speed
-0x97 -- GPU Fan speed target --> editable. 
+0x97 -- GPU Fan speed target 
 0x98 -- Current GPU fan speed
+
+# Manual modes
+0x93 -- CPU manual mode. set it to 0xFF (->0x14) to enable manual mode, 0x04 to disable it.
+0x96 -- GPU manual mode. set it to 0xFF (->0x14) to enable manual mode, 0x04 to disable it.
 
 # Temps 
 0xA8 -- CPU temp (in °C)
