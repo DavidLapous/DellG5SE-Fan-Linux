@@ -10,6 +10,7 @@
 // #include <stdexcept> //error handling
 // #include <gtk/gtk.h> // gtk interface
 
+// #include <getopt.h> //parsing
 
 #include <err.h>
 #include <fcntl.h>
@@ -18,27 +19,43 @@
 namespace fs = std::filesystem;
 
 #define ECio "/sys/kernel/debug/ec/ec0/io"
+
+// Byte offsets
+#define ManualECMode_cpu 147 // 0x93
+#define ManualECMode_gpu 150 // 0x96
 #define GPUaddr 151 // 0x97
 #define CPUaddr 148 //0x94
-#define ZERO 255 // 0xFF
-#define SLOW 240 // 0xF0
-#define MEDIUM 200 // 204 -- 0xCC
-#define NORMAL 163 // 0xA3
-#define FAST 102 // 0x66 
-#define BOOST 91 // 0x5B
+
+// Hex fan speeds
+#define ZERO 255 // 0xFF -- 0 RPM
+#define SLOW 240 // 0xF0 -- 2000RPM
+#define MEDIUM 200 // 204 is 0xCC -- 2400 RPM
+#define NORMAL 163 // 0xA3 -- 3000 RPM
+#define FAST 102 // 0x66 -- 4800 RPM
+#define BOOST 91 // 0x5B -- 5400 RPM
+
+//Temperature thresholds
+#define mou 5
+uint8_t t1;
+uint8_t t2;
+uint8_t t3;
+uint8_t t4=0;
 
 const std::string hwmon = "/sys/class/hwmon";
 
+// harware variables
 int cpu_temp;
 int gpu_temp;
 int cpu_fan;
 int gpu_fan;
 
+// Dellsmm pathes
 std::string GPU_path;
 std::string CPU_path;
 std::string CPU_fan_path;
 std::string GPU_fan_path; 
 std::string dellsmm="";
+
 
 //  Gets the needed paths.
 void Hwmon_get()
@@ -59,6 +76,7 @@ void Hwmon_get()
                 a.open(file_path);
                 std::string sensor_name;
                 a >> sensor_name;
+                a.close();
 
                 if (sensor_name == "GPU"){
                     GPU_path = file_path;
@@ -123,7 +141,7 @@ void update_vars()
 };
 
 // Set cpu fans to selected speed. Input should be in the set {0,128,256}.
-void set_cpu_fan(int left)
+void set_cpu_fan_smm(int left)
 {
     // Force left to be in [0,256]
     int l = std::max(0, std::min(255, left));
@@ -134,7 +152,7 @@ void set_cpu_fan(int left)
     pwm.close();
 };
 // Set gpu fans to selected speed. Input should be in the set {0,128,256}.
-void set_gpu_fan(int right)
+void set_gpu_fan_smm(int right)
 {
     // Force right to be in [0,256]
     int r = std::max(0, std::min(255, right));
@@ -160,6 +178,21 @@ void write_to_ec(int byte_offset, uint8_t value){
 		    value, byte_offset);
 }
 
+void manual_fan_mode(bool on)
+{
+    if(on){
+        write_to_ec(ManualECMode_cpu, 255);
+        write_to_ec(ManualECMode_gpu, 255);
+    }
+    else
+    {
+        write_to_ec(ManualECMode_cpu, 4);
+        write_to_ec(ManualECMode_gpu, 4); 
+    }
+}
+
+
+
 void check_fan_write_permission()
 {
     std::ofstream pwm;
@@ -172,60 +205,22 @@ void check_fan_write_permission()
     pwm.close();
 };
 
-// Updates fans accordings to temp.
-void update_fans(int lowtemp, int hightemp)
+void set_cpu_fan(int speed){
+    write_to_ec(CPUaddr, speed);
+};
+void set_gpu_fan(int speed)
 {
-    // Handle the left (cpu) fan
-    if (cpu_temp < lowtemp)
-    {
-        if (cpu_fan > 2500 || cpu_fan <1500)
-        {
-            set_cpu_fan(0);
-            // write_to_ec(CPUaddr,SLOW); // Not working...
-        }
-    }
-    else if (cpu_temp < hightemp)
-    {
-        if (cpu_fan <= 1900 || cpu_fan >= 3500)
-        {
-            set_cpu_fan(128);
-        }
-    }
-    else
-    {
-        if (cpu_fan < 3500)
-        {
-            set_cpu_fan(255);
-        }
-    }
-    // Handles the right (GPU) fan
-    if (gpu_temp < lowtemp)
-    {
-        if (gpu_fan > 1900 || gpu_fan < 1500)
-        {
-            write_to_ec(GPUaddr,SLOW);
-        }
-    }
-    else if (gpu_temp < hightemp)
-    {
-        
-        if (gpu_fan >= 2900 || cpu_fan >1000)
-        {
-            write_to_ec(GPUaddr,MEDIUM);
-        }
-        else if (gpu_fan <= 2100)
-        {
-            set_gpu_fan(128);
-        }
-    }
-    else
-    {
-        if (gpu_fan < 3500)
-        {
-            set_gpu_fan(255);
-            // write_to_ec(GPUaddr,FAST);
-        }
-    }
+    write_to_ec(GPUaddr, speed);
+};
+
+// Updates fans accordings to temp.
+void update_fans__OLD()
+{
+    
+};
+
+uint8_t hex_to_EC(uint8_t hex){
+    return std::min(std::max(255-hex, 91),255);
 };
 
 void print_status()
@@ -235,47 +230,141 @@ void print_status()
     std::cout << "\033[2F";
 };
 
+
+int fan_curve(uint8_t current_temp, uint8_t current_fan){
+    if (current_temp <t1)
+    {
+        if(current_temp <t1-mou){
+            return ZERO;
+        }
+        return -1;
+    }
+    if (current_temp <t2)
+    {
+        if((current_temp <t2-mou && current_fan >2500) || current_fan < 1500){
+            return SLOW;
+        }
+        return -1;
+    }
+    if (current_temp <t3)
+    {
+        if((current_temp <t3-mou && current_fan > 3500 ) || current_fan < 2500){
+            return NORMAL;
+        }
+        return -1;
+    }
+    if (current_temp <t4 )
+    {
+        if((current_temp <t4-mou && current_fan > 4900) || current_fan < 3500){
+            return FAST;
+        }
+        return -1;
+    }
+    return BOOST;
+}
+
+void fan_update(){
+    int cpu_update = fan_curve(cpu_temp/1000,cpu_fan/1000);
+    if (cpu_update != -1 )
+        set_cpu_fan(cpu_update);
+
+    int gpu_update = fan_curve(gpu_temp/1000,gpu_fan/1000);
+    if (gpu_update != -1 ) 
+        set_gpu_fan(gpu_update);
+
+}
+void usage(char* prog_name, int status){
+    printf("Usage :\n");
+    printf("sudo %s [-s left_fan_speed right_fan_speed] [-l t1 t2 t3 t4] [-t timer] [-r ] [-b]\n\n", prog_name);
+    printf("Arguments description :\n");
+    printf(" -h, --help             show this help message and exit.\n");
+    printf(" -s, --set left right   sets left/rights fan to selected speed (from 0 to 255).\n");
+    printf(" -l, --loop t1 t2 t3 t4 given the temperature thresholds t1, t2, t3, t4 (in °C),\n");
+    printf("                        adjusts the fan speed accordingly with a loop.\n");
+    printf(" -t, --timer t          set the loop timer (in seconds). Default is 20s.\n");
+    printf(" -r, --restore          Gives back the fan control to the BIOS.\n");
+    printf(" -b, --boost            Set fan speed to BOOST (as fn+F7).\n");
+    exit(status);
+}
+
+
 int main(int argc, char* argv[])
 {
-
-    if (argc <= 2)
+    uint timer=20;
+    // Argument Parsing
+    for(int i=1; i<argc; i++)
     {
-        printf("Need more arguments.\n");
-        printf("Usage : DellFan lowtemp hightemp timer\n");
-        printf("where 'lowtemp' is your desired idle temperature, and 'hightemp' is the temperature at which fans are set to full speed.\n");
-        printf("or, if you only want to set speed once : DellFan leftspeed rightspeed -1\n");
-        exit(EXIT_FAILURE);
-    }
+        if (std::string(argv[i])=="--restore" || std::string(argv[i])=="-r")
+        {
+            manual_fan_mode(false);
+            printf("Returned to BIOS Fan control.\n");
+            exit(EXIT_SUCCESS);
+        }
+        if (std::string(argv[i])=="--boost" || std::string(argv[i])=="-b")
+        {
+            manual_fan_mode(true);
+            set_gpu_fan(BOOST);
+            set_cpu_fan(BOOST);
+            printf("Boost speed. Be carefull, manual fan mode is on.");
+            exit(EXIT_SUCCESS);
+        }
+        if (std::string(argv[i])=="--set" || std::string(argv[i])=="-s")
+        {
+            if (argc < i+3)
+            {
+                printf("Need more arguments.\n");
+                exit(EXIT_FAILURE);
+            }
+            
+            manual_fan_mode(true);
+            
+            uint8_t left = std::stoi(argv[i+1]);
+            set_cpu_fan(hex_to_EC(left));
+            uint8_t right = std::stoi(argv[i+2]);
+            set_gpu_fan(hex_to_EC(right));
 
-    const int lowtemp = std::stoi(argv[1]) * 1000;
-    const int hightemp = std::stoi(argv[2]) * 1000;
-    int timer =10;
-    if (argc >3){
-        timer = std::stoi(argv[3]);
+            std::cout << "Set fans to "<< std::stoi(argv[i+1]) <<" and " << std::stoi(argv[i+2])<< ". Be carefull, manual fan mode is on."<< std::endl;
+            exit(EXIT_SUCCESS);
+        }
+        if (std::string(argv[i])=="--timer" || std::string(argv[i])=="-t")
+        {
+            if (argc <i+1)
+            {
+                exit(EXIT_FAILURE);
+            }
+            timer = std::stoi(argv[i+1]);
+        }
+        if (std::string(argv[i])=="--loop" || std::string(argv[i])=="-l")
+        {
+            if (argc < i+5)
+            {
+                printf("Need 4 thresholds.\n");
+                exit(EXIT_FAILURE);
+            }
+            t1 = std::stoi(argv[i+1]);
+            t2 = std::stoi(argv[i+2]);
+            t3 = std::stoi(argv[i+3]);
+            t4 = std::stoi(argv[i+4]);
+        }
+        if (std::string(argv[i])=="--help" || std::string(argv[i])=="-h")
+            usage(argv[0],EXIT_SUCCESS);
+        
     }
-    // std::cout << "Script launched with arguments : " << lowtemp/1000 << " " << hightemp/1000 << " " << timer <<std::endl; //Debug
-    
+    if (t4==0) usage(argv[0],EXIT_FAILURE);
     // Get hwmon variables
     Hwmon_get();
     // Check if launched with enough permissions.
     check_fan_write_permission();
-    
-    if(timer <=0 ){
-        // In that case, we assume the user only wants to set fans once, and exit.
-        const int left = std::min(std::max(lowtemp/1000,0),255); 
-        const int right = std::min(std::max(hightemp/1000,0),255);
-        set_cpu_fan(left);
-        set_gpu_fan(right);
-        std::cout << "Set fans to " << left << " and " << right << "."<< std::endl;
-        return EXIT_SUCCESS;
-    }
+    // Set fans to manual mode.
+    // manual_fan_mode(true);
+    printf("Set fans to manual mode.\n");
     // Fan update loop
     while (true)
     {
         //First update the variables.
         update_vars();
         //Then update the fan speed accordingly.
-        update_fans(lowtemp,hightemp);
+        fan_update();
         //Prints current status
         print_status();
         // wait $timer seconds
@@ -284,7 +373,3 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
 }
 
-// void on_window_main_destroy()
-// {
-//     gtk_main_quit();
-// }
