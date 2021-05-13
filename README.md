@@ -84,6 +84,7 @@ Arguments description :
  -b, --boost            Set fan speed to BOOST (as fn+F7).
 
 ```
+![Fan curve](https://raw.githubusercontent.com/DavidLapous/DellG5SE-Fan-Linux/main/fan_curve.svg)
 
 For a better ease of use, you can put this script in your binaries path `/usr/bin/DellFan` and ask `sudo` not to ask your password everytime you use it by adding the line
 ```
