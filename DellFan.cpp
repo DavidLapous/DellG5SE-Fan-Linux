@@ -282,7 +282,7 @@ void fan_update(){
         set_gpu_fan(gpu_update);
     if (verbose)
     {
-        std::cout <<"CPU and GPU fans update : "<<  cpu_update <<" and "<< gpu_update<<std::endl; 
+        std::cout <<"CPU and GPU fans update : "<<  cpu_update <<" and "<< gpu_update << "      "<<std::endl; 
     }
     
 }
