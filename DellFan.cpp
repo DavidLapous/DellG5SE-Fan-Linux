@@ -56,6 +56,7 @@ std::string CPU_fan_path;
 std::string GPU_fan_path; 
 std::string dellsmm="";
 
+bool verbose= false;
 
 //  Gets the needed paths.
 void Hwmon_get()
@@ -189,6 +190,13 @@ void manual_fan_mode(bool on)
         write_to_ec(ManualECMode_cpu, 4);
         write_to_ec(ManualECMode_gpu, 4); 
     }
+    if (on)
+        printf("Set fans to manual mode.\n");
+    else
+    {
+        printf("Returned to BIOS Fan control.\n");
+    }
+    
 }
 
 
@@ -228,6 +236,7 @@ void print_status()
     std::cout << "Current fan speeds : " << cpu_fan << " RPM and " << gpu_fan << " RPM.      " << std::endl;
     std::cout << "CPU and GPU temperatures : " << cpu_temp/1000 << "°C and " << gpu_temp/1000 << "°C.  " << std::endl;
     std::cout << "\033[2F";
+    if (verbose) std::cout << "\033[1F";
 };
 
 
@@ -271,7 +280,11 @@ void fan_update(){
     int gpu_update = fan_curve(gpu_temp/1000,gpu_fan/1000);
     if (gpu_update != -1 ) 
         set_gpu_fan(gpu_update);
-
+    if (verbose)
+    {
+        std::cout <<"CPU and GPU fans update : "<<  cpu_update <<" and "<< gpu_update<<std::endl; 
+    }
+    
 }
 void usage(char* prog_name, int status){
     printf("Usage :\n");
@@ -282,8 +295,10 @@ void usage(char* prog_name, int status){
     printf(" -l, --loop t1 t2 t3 t4 given the temperature thresholds t1, t2, t3, t4 (in °C),\n");
     printf("                        adjusts the fan speed accordingly with a loop.\n");
     printf(" -t, --timer t          set the loop timer (in seconds). Default is 20s.\n");
+    printf(" -m, --manual           Switch to manual fan mode.\n");
     printf(" -r, --restore          Gives back the fan control to the BIOS.\n");
     printf(" -b, --boost            Set fan speed to BOOST (as fn+F7).\n");
+    printf(" -v, --verbose          Prints loop fan updates. -1 means no fan update made.\n");
     exit(status);
 }
 
@@ -297,7 +312,11 @@ int main(int argc, char* argv[])
         if (std::string(argv[i])=="--restore" || std::string(argv[i])=="-r")
         {
             manual_fan_mode(false);
-            printf("Returned to BIOS Fan control.\n");
+            exit(EXIT_SUCCESS);
+        }
+        if (std::string(argv[i])=="--manual" || std::string(argv[i])=="-m")
+        {
+            manual_fan_mode(false);
             exit(EXIT_SUCCESS);
         }
         if (std::string(argv[i])=="--boost" || std::string(argv[i])=="-b")
@@ -348,6 +367,8 @@ int main(int argc, char* argv[])
         }
         if (std::string(argv[i])=="--help" || std::string(argv[i])=="-h")
             usage(argv[0],EXIT_SUCCESS);
+        if (std::string(argv[i])=="--verbose" || std::string(argv[i])=="-v")
+            verbose=true;
         
     }
     if (t4==0) usage(argv[0],EXIT_FAILURE);
@@ -356,8 +377,11 @@ int main(int argc, char* argv[])
     // Check if launched with enough permissions.
     check_fan_write_permission();
     // Set fans to manual mode.
-    // manual_fan_mode(true);
-    printf("Set fans to manual mode.\n");
+    manual_fan_mode(true); // This also sets fan speed to max
+    sleep(1);
+    set_cpu_fan(SLOW);
+    set_gpu_fan(SLOW);
+
     // Fan update loop
     while (true)
     {
