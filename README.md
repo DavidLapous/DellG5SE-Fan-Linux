@@ -57,7 +57,6 @@ This also should allow you to map profiles / fan speeds to keyboard shortcuts vi
   - [ ] Keyboard shortcut, complicated with wayland I don't really know how to deal with it.
 - [x] Cpp version 
   - [ ] gui.
-  - [ ] Fan curve fixes.
   - [ ] Remove the Dell-smm-hwmon kernel module dependance.
 - [x] Direct EC editing.
   - [x] GPU part.
