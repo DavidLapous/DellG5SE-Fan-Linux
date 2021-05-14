@@ -28,14 +28,14 @@ namespace fs = std::filesystem;
 
 // Hex fan speeds
 #define ZERO 255 // 0xFF -- 0 RPM
-#define SLOW 240 // 0xF0 -- 2000RPM
+#define SLOW 245 // 0xF5 -- 2000RPM
 #define MEDIUM 200 // 204 is 0xCC -- 2400 RPM
 #define NORMAL 163 // 0xA3 -- 3000 RPM
 #define FAST 102 // 0x66 -- 4800 RPM
 #define BOOST 91 // 0x5B -- 5400 RPM
 
 //Temperature thresholds
-#define mou 5
+#define mou 2
 uint8_t t1;
 uint8_t t2;
 uint8_t t3;
@@ -44,10 +44,10 @@ uint8_t t4=0;
 const std::string hwmon = "/sys/class/hwmon";
 
 // harware variables
-int cpu_temp;
-int gpu_temp;
-int cpu_fan;
-int gpu_fan;
+uint cpu_temp;
+uint gpu_temp;
+uint cpu_fan;
+uint gpu_fan;
 
 // Dellsmm pathes
 std::string GPU_path;
@@ -170,14 +170,10 @@ void write_to_ec(int byte_offset, uint8_t value){
     int error;
 
 	error = lseek(fd, byte_offset, SEEK_SET);
-	if (error != byte_offset)
-		err(EXIT_FAILURE, "Cannot set offset to 0x%.2x", byte_offset);
-
-	error = write(fd, &value, 1);
-	if (error != 1)
-		err(EXIT_FAILURE, "Cannot write value 0x%.2x to offset 0x%.2x",
-		    value, byte_offset);
+	if (error == byte_offset)
+		write(fd, &value, 1);
 }
+
 
 void manual_fan_mode(bool on)
 {
@@ -240,17 +236,17 @@ void print_status()
 };
 
 
-int fan_curve(uint8_t current_temp, uint8_t current_fan){
+int fan_curve(uint8_t current_temp, uint current_fan){
     if (current_temp <t1)
     {
-        if(current_temp <t1-mou){
+        if(current_temp <t1-mou && current_fan > 1500){
             return ZERO;
         }
         return -1;
     }
     if (current_temp <t2)
     {
-        if((current_temp <t2-mou && current_fan >2500) || current_fan < 1500){
+        if( (current_temp <t2-mou && current_fan >2500) || current_fan < 1500){
             return SLOW;
         }
         return -1;
@@ -273,16 +269,16 @@ int fan_curve(uint8_t current_temp, uint8_t current_fan){
 }
 
 void fan_update(){
-    int cpu_update = fan_curve(cpu_temp/1000,cpu_fan/1000);
+    int cpu_update = fan_curve(cpu_temp/1000,cpu_fan);
     if (cpu_update != -1 )
         set_cpu_fan(cpu_update);
 
-    int gpu_update = fan_curve(gpu_temp/1000,gpu_fan/1000);
+    int gpu_update = fan_curve(gpu_temp/1000,gpu_fan);
     if (gpu_update != -1 ) 
         set_gpu_fan(gpu_update);
     if (verbose)
     {
-        std::cout <<"CPU and GPU fans update : "<<  cpu_update <<" and "<< gpu_update << "      "<<std::endl; 
+        std::cout <<"CPU and GPU fans update : "<<  cpu_update <<" and "<< gpu_update << ".   "<<std::endl; 
     }
     
 }
