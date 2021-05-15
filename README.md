@@ -1,20 +1,25 @@
 # DellG5SE-Fan-Linux
 The Dell G5SE-5505 laptop isn't working with usual fan managers, this script is a small utility to automatically set fan speed according to cpu and gpu thermals.
 ## Requirements
-You will need to modprobe the dell smm kernel module, which is not loaded by default on this laptop.
+You will need to modprobe the dell smm kernel module, which is not loaded by default on this laptop. For the CPP version, which is writing to directly to the embedded controller of the laptop, you will need to allow EC writing.
 ```shell
 $ sudo modprobe dell-smm-hwmon restricted=0 ignore_dmi=1
+$ sudo modprobe ec_sys write_support=1 
 ```
-If you want this setting to stay upon reboot, you can create a / replace by or append to the config file  `/etc/modules-load.d/dell-smm-hwmon.conf` 
+If you want these settings to stay upon reboot, you can create a / replace by or append to the config file  `/etc/modules-load.d/dell-smm-hwmon.conf` 
 ```shell
+# This file must be at /etc/modules-load.d/
 dell-smm-hwmon
+ec_sys
 ```
 and the same for `/etc/modprobe.d/dell-smm-hwmon.conf` 
 ```shell
 # This file must be at /etc/modprobe.d/
 options dell-smm-hwmon restricted=0 ignore_dmi=1
+options ec_sys write_support=1
 ```
-For the CPP version, which is writing to directly to the embedded controller, you will need to allow EC writing, by following [these steps](https://github.com/YoyPa/isw/wiki/How-to-configure-ec_sys-with-write_support=1).
+If `ec_sys` still doesn't load, it may be because it's a builtin kernel module. Then, try to add `ec_sys.write_support=1` as a kernel paramenter. 
+
 ## Usage
 
 ### Cpp Version
