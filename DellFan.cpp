@@ -16,6 +16,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <signal.h>
+
 namespace fs = std::filesystem;
 
 #define ECio "/sys/kernel/debug/ec/ec0/io"
@@ -196,17 +198,20 @@ void manual_fan_mode(bool on)
 }
 
 
-
-void check_fan_write_permission()
+// Checks if launched with enough permissions, and requirements are filled.
+void permissions_requirements_check()
 {
-    std::ofstream pwm;
-    pwm.open(dellsmm + "/pwm1");
-    if (!pwm.is_open())
-    {
-        std::cout << "Cannot change fan speed. Are you running the script with root permission ?" << std::endl;
+    // Check root permissions.
+    if (getuid()!=0){
+        std::cout << "No root permissions given."<< std::endl;
         exit(EXIT_FAILURE);
     }
-    pwm.close();
+    // Checks if ec_sys is correctly loaded.
+    fs::path f(ECio);
+    if(!fs::exists(f)){
+        std::cout << "Cannot find ECio path. Try 'sudo modprobe ec_sys write_support=1' or add 'ec_sys.write_support=1' as kernel parameter if that's not working."<< std::endl;
+        exit(EXIT_FAILURE);
+    }
 };
 
 void set_cpu_fan(int speed){
@@ -217,16 +222,12 @@ void set_gpu_fan(int speed)
     write_to_ec(GPUaddr, speed);
 };
 
-// Updates fans accordings to temp.
-void update_fans__OLD()
-{
-    
-};
-
+// Converts hex input to the EC format and limits the max fan speed to boost speed (5400 RPM).
 uint8_t hex_to_EC(uint8_t hex){
     return std::min(std::max(255-hex, 91),255);
 };
 
+// Prints a status update.
 void print_status()
 {
     std::cout << "Current fan speeds : " << cpu_fan << " RPM and " << gpu_fan << " RPM.      " << std::endl;
@@ -299,6 +300,17 @@ void usage(char* prog_name, int status){
 }
 
 
+void exit_handler(int s){
+    // Formating.
+    std::cout << std::endl << std::endl;
+    if (verbose) std::cout << std::endl;
+
+    // Gives control to the BIOS.
+    printf("Exit requested. (Caught signal %d)\n", s);
+    manual_fan_mode(false);
+    exit(s);
+}
+
 int main(int argc, char* argv[])
 {
     uint timer=20;
@@ -307,16 +319,19 @@ int main(int argc, char* argv[])
     {
         if (std::string(argv[i])=="--restore" || std::string(argv[i])=="-r")
         {
+            permissions_requirements_check();
             manual_fan_mode(false);
             exit(EXIT_SUCCESS);
         }
         if (std::string(argv[i])=="--manual" || std::string(argv[i])=="-m")
         {
+            permissions_requirements_check();
             manual_fan_mode(false);
             exit(EXIT_SUCCESS);
         }
         if (std::string(argv[i])=="--boost" || std::string(argv[i])=="-b")
         {
+            permissions_requirements_check();
             manual_fan_mode(true);
             set_gpu_fan(BOOST);
             set_cpu_fan(BOOST);
@@ -325,6 +340,7 @@ int main(int argc, char* argv[])
         }
         if (std::string(argv[i])=="--set" || std::string(argv[i])=="-s")
         {
+            permissions_requirements_check();
             if (argc < i+3)
             {
                 printf("Need more arguments.\n");
@@ -351,9 +367,10 @@ int main(int argc, char* argv[])
         }
         if (std::string(argv[i])=="--loop" || std::string(argv[i])=="-l")
         {
+            permissions_requirements_check();
             if (argc < i+5)
             {
-                printf("Need 4 thresholds.\n");
+                printf("Need 4 temperature thresholds.\n");
                 exit(EXIT_FAILURE);
             }
             t1 = std::stoi(argv[i+1]);
@@ -368,13 +385,16 @@ int main(int argc, char* argv[])
         
     }
     if (t4==0) usage(argv[0],EXIT_FAILURE);
+
+    // Set fans to auto once interrupt signal is sent.
+    signal (SIGINT,exit_handler);
+
     // Get hwmon variables
     Hwmon_get();
-    // Check if launched with enough permissions.
-    check_fan_write_permission();
+
     // Set fans to manual mode.
-    manual_fan_mode(true); // This also sets fan speed to max
-    sleep(1);
+    manual_fan_mode(true); // This sets fan to random speeds.
+    sleep(1); // May not be needed.
     set_cpu_fan(SLOW);
     set_gpu_fan(SLOW);
 
@@ -385,11 +405,11 @@ int main(int argc, char* argv[])
         update_vars();
         //Then update the fan speed accordingly.
         fan_update();
-        //Prints current status
+        // Prints current status.
         print_status();
-        // wait $timer seconds
+        // wait $timer seconds.
         sleep(timer);
     }
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
 }
 
