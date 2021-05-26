@@ -326,7 +326,7 @@ int main(int argc, char* argv[])
         if (std::string(argv[i])=="--manual" || std::string(argv[i])=="-m")
         {
             permissions_requirements_check();
-            manual_fan_mode(false);
+            manual_fan_mode(true);
             exit(EXIT_SUCCESS);
         }
         if (std::string(argv[i])=="--boost" || std::string(argv[i])=="-b")
