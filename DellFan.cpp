@@ -328,7 +328,7 @@ inline void _set(int i, int argc, char* argv[]) {
 	else
 		right = std::stoi(argv[i+2]);
 	set_gpu_fan(hex_to_EC(right));
-	std::cout << "Set fans to "<< (int)(left) <<" and " << (int)(right) << ". Be carefull, manual fan mode is on."<< std::endl;
+	std::cout << "Set fans to "<< (int)(left) <<" and " << (int)(right) << ". Be careful, manual fan mode is on."<< std::endl;
 	exit(EXIT_SUCCESS);
 }
 inline void _boost(){
